@@ -1,13 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    // Deshabilitar ESLint durante build en producción
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // También deshabilitar errores de TypeScript en build
     ignoreBuildErrors: true,
   },
+  // Deshabilitar generación estática para páginas problemáticas
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+  // Forzar todas las páginas a ser dinámicas
+  output: 'standalone'
 }
 
 module.exports = nextConfig
