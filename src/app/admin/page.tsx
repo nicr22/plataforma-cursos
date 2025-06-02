@@ -15,7 +15,6 @@ import {
   Home,
   Settings
 } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 
 type AdminView = 'dashboard' | 'courses' | 'modules' | 'users' | 'analytics'
 
@@ -56,19 +55,26 @@ export default function AdminPage() {
   }, [user, loading, router])
 
   const checkAdminRole = async () => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user?.id)
-      .single()
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user?.id)
+        .single()
 
-    if (profile?.role !== 'admin') {
+      if (profile?.role !== 'admin') {
+        router.push('/')
+      }
+    } catch (error) {
+      console.error('Error checking admin role:', error)
       router.push('/')
     }
   }
 
   const loadDashboardStats = async () => {
     try {
+      const { supabase } = await import('@/lib/supabase')
       const [coursesRes, usersRes, lessonsRes, commentsRes] = await Promise.all([
         supabase.from('courses').select('id', { count: 'exact' }),
         supabase.from('profiles').select('id', { count: 'exact' }),
