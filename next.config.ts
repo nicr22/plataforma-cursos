@@ -1,21 +1,16 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Configuración para exportación estática (Netlify)
-  output: 'export',
-  trailingSlash: true,
+  // NO incluir output: 'export' para Vercel
   images: {
     unoptimized: true
-  },
-  // Quitar la configuración experimental problemática
-  // experimental: {
-  //   missingSuspenseWithCSRBailout: false,
-  // },
+  }
 }
 
-module.exports = nextConfig
+export default nextConfig
