@@ -6,12 +6,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Deshabilitar generación estática para páginas problemáticas
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
+  // Configuración para exportación estática (Netlify)
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true
   },
-  // Forzar todas las páginas a ser dinámicas
-  output: 'standalone'
+  // Quitar la configuración experimental problemática
+  // experimental: {
+  //   missingSuspenseWithCSRBailout: false,
+  // },
 }
 
 module.exports = nextConfig
