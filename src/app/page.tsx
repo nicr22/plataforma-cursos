@@ -264,19 +264,26 @@ export default function Home() {
                   onClick={() => window.location.href = `/course/${course.id}`}
                   className="group cursor-pointer"
                 >
-                  <div className="relative overflow-hidden rounded-xl bg-gray-800 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                    <div className="aspect-video">
+                  <div className="relative overflow-hidden rounded-xl bg-gray-800 border border-gray-700 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-red-500">
+                    <div className="aspect-video relative">
                       {course.thumbnail_url ? (
                         <img
                           src={course.thumbnail_url}
                           alt={course.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
-                          <BookOpen className="w-12 h-12 text-gray-400" />
-                        </div>
-                      )}
+                      ) : null}
+                      <div
+                        className="w-full h-full bg-gradient-to-br from-red-600 via-orange-600 to-yellow-600 flex items-center justify-center"
+                        style={{ display: course.thumbnail_url ? 'none' : 'flex' }}
+                      >
+                        <BookOpen className="w-16 h-16 text-white opacity-80" />
+                      </div>
                     </div>
                     
                     {/* Progress Bar */}
@@ -328,19 +335,26 @@ export default function Home() {
                 onClick={() => window.location.href = `/course/${course.id}`}
                 className="group cursor-pointer"
               >
-                <div className="relative overflow-hidden rounded-xl bg-gray-800 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-                  <div className="aspect-video">
+                <div className="relative overflow-hidden rounded-xl bg-gray-800 border border-gray-700 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-red-500">
+                  <div className="aspect-video relative">
                     {course.thumbnail_url ? (
                       <img
                         src={course.thumbnail_url}
                         alt={course.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
-                        <BookOpen className="w-12 h-12 text-white" />
-                      </div>
-                    )}
+                    ) : null}
+                    <div
+                      className="w-full h-full bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center"
+                      style={{ display: course.thumbnail_url ? 'none' : 'flex' }}
+                    >
+                      <BookOpen className="w-16 h-16 text-white opacity-80" />
+                    </div>
                   </div>
 
                   {/* Badge */}

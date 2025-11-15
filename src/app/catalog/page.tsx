@@ -263,22 +263,29 @@ export default function CatalogPage() {
                   className="group bg-gray-800 rounded-xl overflow-hidden border border-gray-700 hover:border-red-500 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
                 >
                   {/* Thumbnail */}
-                  <div className="relative aspect-video overflow-hidden bg-gray-700">
+                  <div className="relative aspect-video overflow-hidden">
                     {course.thumbnail_url ? (
                       <img
                         src={course.thumbnail_url}
                         alt={course.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-16 h-16 text-gray-600" />
-                      </div>
-                    )}
+                    ) : null}
+                    <div
+                      className="w-full h-full bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 flex items-center justify-center"
+                      style={{ display: course.thumbnail_url ? 'none' : 'flex' }}
+                    >
+                      <BookOpen className="w-20 h-20 text-white opacity-90" />
+                    </div>
 
                     {/* Nuevo Badge */}
                     <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">
+                      <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full shadow-lg">
                         DISPONIBLE
                       </span>
                     </div>
