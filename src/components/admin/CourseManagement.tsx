@@ -499,29 +499,29 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Gestión de Cursos</h2>
-          <p className="text-gray-400 mt-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-white">Gestión de Cursos</h2>
+          <p className="text-gray-400 mt-1 text-sm sm:text-base">
             {filteredCourses.length} de {courses.length} cursos
             {searchTerm && ` • Búsqueda: "${searchTerm}"`}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={() => loadCourses()}
-            className="flex items-center px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+            className="flex items-center px-3 sm:px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             title="Recargar"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:scale-105"
+            className="flex-1 sm:flex-initial flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:scale-105 text-sm sm:text-base"
           >
-            <Plus className="w-5 h-5 mr-2" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Nuevo Curso
           </button>
         </div>

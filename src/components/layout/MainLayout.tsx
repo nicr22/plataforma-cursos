@@ -18,7 +18,9 @@ import {
   Play,
   Award,
   Clock,
-  Bell
+  Bell,
+  Menu,
+  X
 } from 'lucide-react'
 import NotificationBell from '@/components/ui/NotificationBell'
 import { supabase } from '@/lib/supabase'
@@ -31,7 +33,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { user, profile, loading, signOut } = useAuth()
   const router = useRouter()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [sidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activePage, setActivePage] = useState('dashboard')
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -156,8 +159,28 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex">
-      {/* Sidebar Estilo Netflix - FIJO */}
-      <div className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-gray-900 via-gray-800 to-black transition-all duration-300 flex flex-col border-r border-gray-700 shadow-2xl fixed left-0 top-0 bottom-0 z-50`}>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        className="lg:hidden fixed top-4 left-4 z-[60] p-2 bg-gray-800 rounded-lg border border-gray-700 shadow-lg"
+      >
+        {mobileMenuOpen ? (
+          <X className="w-6 h-6 text-white" />
+        ) : (
+          <Menu className="w-6 h-6 text-white" />
+        )}
+      </button>
+
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar Estilo Netflix - FIJO en desktop, slide-in en mobile */}
+      <div className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-gray-900 via-gray-800 to-black transition-all duration-300 flex flex-col border-r border-gray-700 shadow-2xl fixed left-0 top-0 bottom-0 z-50 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         {/* Logo Section */}
         <div className="p-6 border-b border-gray-700 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -206,6 +229,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={() => {
                     setActivePage(item.id)
                     router.push(item.path)
+                    setMobileMenuOpen(false) // Cerrar menú móvil al navegar
                   }}
                   className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative overflow-hidden ${
                     item.active
@@ -240,6 +264,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               onClick={() => {
                 setActivePage('profile')
                 router.push('/profile')
+                setMobileMenuOpen(false)
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative overflow-hidden ${
                 activePage === 'profile'
@@ -263,7 +288,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 {sidebarOpen ? 'Administración' : ''}
               </div>
               <button
-                onClick={() => router.push('/admin')}
+                onClick={() => {
+                  router.push('/admin')
+                  setMobileMenuOpen(false)
+                }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-gradient-to-r hover:from-purple-600 hover:to-purple-500 hover:text-white transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/25"
               >
                 <Settings className="w-5 h-5 flex-shrink-0" />
@@ -308,7 +336,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </div>
 
       {/* Main Content Area - SIN HEADER BLANCO */}
-      <div className={`flex-1 flex flex-col min-h-screen ${sidebarOpen ? 'ml-72' : 'ml-20'} transition-all duration-300`}>
+      <div className={`flex-1 flex flex-col min-h-screen lg:${sidebarOpen ? 'ml-72' : 'ml-20'} transition-all duration-300`}>
         {/* HEADER COMENTADO - NO SE MUESTRA */}
         {/*
         <header className="bg-gradient-to-r from-black/80 via-gray-900/80 to-black/80 backdrop-blur-md border-b border-gray-700/50 px-8 py-6 shadow-2xl">
@@ -370,7 +398,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         */}
 
         {/* Main Content - AHORA OCUPA TODA LA PANTALLA */}
-        <main className="flex-1 p-8 bg-gradient-to-b from-gray-900/50 to-black/30">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 pt-16 lg:pt-8 bg-gradient-to-b from-gray-900/50 to-black/30">
           {children}
         </main>
       </div>

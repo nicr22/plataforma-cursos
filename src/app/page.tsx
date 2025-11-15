@@ -196,7 +196,7 @@ export default function Home() {
 
   return (
     <MainLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Hero Banner - Banners promocionales o último curso visto */}
         <HeroBanner lastViewedCourse={lastViewedCourse} />
 
@@ -250,14 +250,14 @@ export default function Home() {
         {/* Continúa Viendo */}
         {continueWatching.length > 0 && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-bold text-white">Continúa Aprendiendo</h2>
-              <button className="text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">Continúa Aprendiendo</h2>
+              <button className="text-gray-400 hover:text-white transition-colors hidden sm:flex items-center gap-2">
                 Ver todo <ChevronRight className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {continueWatching.map((course) => (
                 <div
                   key={course.id}
@@ -309,10 +309,10 @@ export default function Home() {
 
         {/* Todos los Cursos */}
         <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold text-white">Mis Cursos</h2>
-            <div className="flex items-center gap-4">
-              <select className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-600 focus:border-red-500 focus:outline-none">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">Mis Cursos</h2>
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <select className="bg-gray-800 text-white px-3 sm:px-4 py-2 rounded-lg border border-gray-600 focus:border-red-500 focus:outline-none text-sm sm:text-base w-full sm:w-auto">
                 <option>Todos los cursos</option>
                 <option>En progreso</option>
                 <option>Completados</option>
@@ -321,7 +321,7 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {courses.map((course) => (
               <div
                 key={course.id}

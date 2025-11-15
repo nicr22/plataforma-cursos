@@ -327,17 +327,17 @@ export default function CoursePage() {
         </div>
       </div>
 
-      <div className="flex min-h-screen">
+      <div className="flex flex-col lg:flex-row min-h-screen">
         {/* Sidebar con módulos y lecciones - DISEÑO NETFLIX RENOVADO */}
-        <div className="w-96 bg-gradient-to-b from-gray-900 via-gray-800 to-black border-r border-gray-700 shadow-2xl min-h-screen overflow-y-auto">
-          <div className="p-6">
+        <div className="w-full lg:w-96 bg-gradient-to-b from-gray-900 via-gray-800 to-black lg:border-r border-gray-700 shadow-2xl min-h-screen overflow-y-auto order-2 lg:order-1">
+          <div className="p-4 sm:p-6">
             {/* Header del sidebar */}
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-red-500 rounded-lg flex items-center justify-center">
                   <Book className="w-4 h-4 text-white" />
                 </div>
-                <h2 className="text-xl font-bold text-white">Contenido del curso</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-white">Contenido del curso</h2>
               </div>
               
               {/* Progreso general del curso */}
@@ -518,12 +518,12 @@ export default function CoursePage() {
         </div>
 
         {/* Área principal del video y contenido */}
-        <div className="flex-1 bg-gradient-to-b from-gray-900/50 to-black/30">
+        <div className="flex-1 bg-gradient-to-b from-gray-900/50 to-black/30 order-1 lg:order-2">
           {selectedLesson ? (
             <div className="flex flex-col h-full">
               {/* Área del video */}
-              <div className="bg-black py-6 flex justify-center">
-                <div className="w-full max-w-[1400px] px-4">
+              <div className="bg-black py-3 sm:py-6 flex justify-center">
+                <div className="w-full max-w-[1400px] px-2 sm:px-4">
                   <div className="relative w-full" style={{ paddingTop: '56.25%' }}> {/* 16:9 Aspect Ratio */}
                     {selectedLesson.video_url && isClient ? (
                       <div className="absolute inset-0 rounded-lg overflow-hidden">
@@ -558,24 +558,24 @@ export default function CoursePage() {
               </div>
               
               {/* Información de la lección */}
-              <div className="flex-1 p-8 bg-gradient-to-b from-gray-800/30 to-gray-900/30">
+              <div className="flex-1 p-4 sm:p-6 md:p-8 bg-gradient-to-b from-gray-800/30 to-gray-900/30">
                 <div className="max-w-4xl mx-auto">
-                  <div className="flex items-start justify-between mb-8">
-                    <div>
-                      <h2 className="text-3xl font-bold text-white mb-3">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-6 sm:mb-8">
+                    <div className="flex-1">
+                      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3">
                         {selectedLesson.title}
                       </h2>
-                      <p className="text-gray-300 text-lg leading-relaxed">
+                      <p className="text-gray-300 text-sm sm:text-base md:text-lg leading-relaxed">
                         {selectedLesson.description || 'En esta lección aprenderás conceptos fundamentales que te ayudarán a avanzar en tu aprendizaje.'}
                       </p>
                     </div>
-                    
+
                     {!isLessonCompleted(selectedLesson.id) && (
                       <button
                         onClick={markAsCompleted}
-                        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ml-6 shadow-lg hover:scale-105 flex items-center gap-2"
+                        className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all duration-200 w-full sm:w-auto sm:whitespace-nowrap shadow-lg hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
                       >
-                        <CheckCircle className="w-5 h-5" />
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                         Marcar como completado
                       </button>
                     )}
@@ -583,7 +583,7 @@ export default function CoursePage() {
 
                   {/* Estado de completado */}
                   {isLessonCompleted(selectedLesson.id) && (
-                    <div className="bg-gradient-to-r from-green-600/20 to-green-500/10 border border-green-500/30 rounded-xl p-6 flex items-center gap-4 mb-8">
+                    <div className="bg-gradient-to-r from-green-600/20 to-green-500/10 border border-green-500/30 rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
                       <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
                         <CheckCircle className="h-6 w-6 text-white" />
                       </div>
@@ -602,7 +602,7 @@ export default function CoursePage() {
                   )}
 
                   {/* Comentarios de la lección */}
-                  <div className="bg-gray-800/20 rounded-xl p-6 border border-gray-700/50">
+                  <div className="bg-gray-800/20 rounded-xl p-4 sm:p-6 border border-gray-700/50">
                     <Comments lessonId={selectedLesson.id} />
                   </div>
                 </div>

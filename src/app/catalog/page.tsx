@@ -146,18 +146,18 @@ export default function CatalogPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Hero Header */}
-        <div className="relative bg-gradient-to-r from-red-600 to-purple-600 rounded-2xl p-8 md:p-12 overflow-hidden">
+        <div className="relative bg-gradient-to-r from-red-600 to-purple-600 rounded-xl sm:rounded-2xl p-6 sm:p-8 md:p-12 overflow-hidden">
           <div className="absolute inset-0 bg-black/20"></div>
           <div className="relative z-10">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3 sm:mb-4">
               Catálogo de Cursos
             </h1>
-            <p className="text-xl text-white/90 mb-6 max-w-2xl">
+            <p className="text-base sm:text-lg md:text-xl text-white/90 mb-4 sm:mb-6 max-w-2xl">
               Descubre nuevos cursos para ampliar tus conocimientos y alcanzar tus metas profesionales
             </p>
-            <div className="flex items-center gap-4 text-white/80">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-white/80 text-sm sm:text-base">
               <div className="flex items-center gap-2">
                 <Award className="w-5 h-5" />
                 <span>Acceso inmediato</span>
@@ -175,15 +175,15 @@ export default function CatalogPage() {
         </div>
 
         {/* Search */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+        <div className="bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-700">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar cursos disponibles..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-red-500 focus:outline-none"
+              className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 bg-gray-700 text-white text-sm sm:text-base rounded-lg border border-gray-600 focus:border-red-500 focus:outline-none"
             />
           </div>
 
@@ -206,9 +206,9 @@ export default function CatalogPage() {
         </div>
 
         {/* Filters Row */}
-        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-          <h3 className="text-white font-semibold mb-4">Filtros</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-700">
+          <h3 className="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Filtros</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {/* Category Filter */}
             {categories.length > 0 && (
               <div>
@@ -255,8 +255,8 @@ export default function CatalogPage() {
         {/* Courses Grid */}
         {filteredCourses.length > 0 ? (
           <div>
-            <h2 className="text-2xl font-bold text-white mb-6">Cursos Disponibles</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Cursos Disponibles</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredCourses.map((course) => (
                 <div
                   key={course.id}

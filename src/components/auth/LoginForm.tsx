@@ -27,7 +27,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Panel - Branding & Info */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
         {/* Decorative Elements */}
@@ -110,8 +110,8 @@ export default function LoginForm() {
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-8">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-4 sm:p-6 md:p-8">
+        <div className="w-full max-w-md px-2 sm:px-0">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
             <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
@@ -121,11 +121,11 @@ export default function LoginForm() {
           </div>
 
           {/* Welcome Text */}
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               Bienvenido
             </h2>
-            <p className="text-gray-400">
+            <p className="text-sm sm:text-base text-gray-400">
               Ingresa a tu cuenta para continuar
             </p>
           </div>
