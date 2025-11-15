@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, AlertCircle, BookOpen, Users, Award, TrendingUp } from 'lucide-react'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -18,122 +18,178 @@ export default function LoginForm() {
     setError('')
 
     const { error } = await signIn(email, password)
-    
+
     if (error) {
       setError(error.message)
     }
-    
+
     setLoading(false)
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-black to-gray-800">
-        {/* Animated particles */}
+    <div className="min-h-screen flex">
+      {/* Left Panel - Branding & Info */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 via-black to-gray-800 relative overflow-hidden">
+        {/* Decorative Elements */}
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-          <div className="absolute top-32 right-10 w-96 h-96 bg-gray-400 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
-          <div className="absolute bottom-10 left-32 w-80 h-80 bg-gray-300 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-500"></div>
+          <div className="absolute top-20 left-20 w-96 h-96 bg-red-600 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-orange-600 rounded-full mix-blend-multiply filter blur-3xl animate-pulse delay-1000"></div>
         </div>
-        
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)',
-          backgroundSize: '20px 20px'
-        }}></div>
-      </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 w-full max-w-md mx-4">
-        {/* Logo/Brand Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl mb-6 border border-white/20">
-            <div className="text-3xl font-bold text-white">
-              EP
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-2xl font-bold">EduPlatform</span>
+            <span className="text-xs text-gray-400">Tu plataforma de aprendizaje</span>
+          </div>
+
+          {/* Main Content */}
+          <div className="space-y-8">
+            <div>
+              <h1 className="text-5xl font-bold mb-4 leading-tight">
+                Todos tus cursos<br />en un solo lugar
+              </h1>
+              <p className="text-gray-300 text-lg max-w-md">
+                Conecta, aprende y crece profesionalmente. Tu plataforma de aprendizaje nunca se detiene.
+              </p>
+            </div>
+
+            {/* Features */}
+            <div className="grid grid-cols-2 gap-6 max-w-lg">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-700">
+                  <Users className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <div className="font-semibold">Acceso ilimitado</div>
+                  <div className="text-sm text-gray-400">A todos tus cursos</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-700">
+                  <Award className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <div className="font-semibold">Certificados</div>
+                  <div className="text-sm text-gray-400">Al completar</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-700">
+                  <TrendingUp className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <div className="font-semibold">Seguimiento</div>
+                  <div className="text-sm text-gray-400">De tu progreso</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 border border-gray-700">
+                  <BookOpen className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <div className="font-semibold">Contenido nuevo</div>
+                  <div className="text-sm text-gray-400">Cada semana</div>
+                </div>
+              </div>
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            EduPlatform
-          </h1>
-          <p className="text-gray-300 text-lg">
-            Bienvenido a tu plataforma
-          </p>
-        </div>
 
-        {/* Login Card */}
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 shadow-2xl p-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white text-center mb-2">
-              Ingresar a mi Cuenta
+          {/* Footer */}
+          <div className="text-gray-500 text-sm">
+            © 2024 EduPlatform. Hecho para emprendedores digitales.
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel - Login Form */}
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black p-8">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
+            <div className="w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-2xl font-bold text-white">EduPlatform</span>
+          </div>
+
+          {/* Welcome Text */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-white mb-2">
+              Bienvenido
             </h2>
-            <p className="text-gray-300 text-center text-sm">
-              Accede a todos tus cursos y continúa aprendiendo
+            <p className="text-gray-400">
+              Ingresa a tu cuenta para continuar
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Input */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="w-full pl-12 pr-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
-            {/* Password Input */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                className="w-full pl-12 pr-12 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-4 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
-                ) : (
-                  <Eye className="h-5 w-5 text-gray-400 hover:text-white transition-colors" />
-                )}
-              </button>
-            </div>
-
-            {/* Remember Me Checkbox */}
-            <div className="flex items-center">
-              <input
-                id="remember"
-                name="remember"
-                type="checkbox"
-                className="h-4 w-4 text-blue-600 bg-white/10 border-white/20 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <label htmlFor="remember" className="ml-3 text-sm text-gray-300">
-                Recuérdame
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email Label & Input */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                Email
               </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-500" />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="w-full pl-12 pr-4 py-3.5 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Password Label & Input */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                Contraseña
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-500" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className="w-full pl-12 pr-12 py-3.5 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-500 hover:text-gray-300 transition-colors" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-500 hover:text-gray-300 transition-colors" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="flex items-center space-x-2 text-red-300 text-sm bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <div className="flex items-center space-x-2 text-red-300 text-sm bg-red-500/10 border border-red-500/30 rounded-lg p-3">
                 <AlertCircle className="h-4 w-4 flex-shrink-0" />
                 <span>{error}</span>
               </div>
@@ -143,38 +199,38 @@ export default function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 px-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-4 px-6 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Accediendo...</span>
+                  <span>Iniciando Sesión</span>
                 </div>
               ) : (
-                'Acceder a mi Plataforma'
+                'Iniciar Sesión'
               )}
             </button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-6 text-center">
-            <button className="text-gray-400 hover:text-white text-sm transition-colors">
-              ¿Olvidaste tu contraseña?
+          <div className="mt-6 text-center space-y-4">
+            <button className="text-gray-400 hover:text-white text-sm font-medium transition-colors">
+              ¿No tienes cuenta? <span className="underline">Regístrate aquí</span>
             </button>
           </div>
-        </div>
 
-        {/* Bottom Help Link */}
-        <div className="text-center mt-6">
-          <button className="inline-flex items-center px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-gray-300 hover:text-white hover:bg-white/20 transition-all duration-200">
-            Tutoriales de Ayuda
-          </button>
-        </div>
+          {/* Help Link */}
+          <div className="mt-8 text-center">
+            <button className="text-gray-500 hover:text-gray-400 text-sm transition-colors">
+              Tutoriales de Ayuda
+            </button>
+          </div>
 
-        {/* Copyright */}
-        <div className="text-center mt-8 text-gray-500 text-sm">
-          © 2024 - EduPlatform<br />
-          Todos los derechos reservados.
+          {/* Copyright - Mobile */}
+          <div className="lg:hidden text-center mt-8 text-gray-600 text-xs">
+            © 2024 - EduPlatform<br />
+            Todos los derechos reservados.
+          </div>
         </div>
       </div>
     </div>

@@ -2,17 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import MainLayout from '@/components/layout/MainLayout'
+import HeroBanner from '@/components/home/HeroBanner'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { Course, LessonProgress } from '@/types'
-import { 
-  Play, 
-  Star, 
-  Clock, 
-  Award, 
-  TrendingUp, 
-  BookOpen, 
-  Users, 
+import {
+  Play,
+  Star,
+  Clock,
+  Award,
+  TrendingUp,
+  BookOpen,
+  Users,
   ChevronRight,
   CheckCircle,
   BarChart3,
@@ -35,6 +36,14 @@ interface ContinueWatchingCourse extends Course {
   nextLessonTitle?: string
 }
 
+interface LastViewedCourse {
+  id: string
+  title: string
+  description: string | null
+  thumbnail_url: string | null
+  progress?: number
+}
+
 export default function Home() {
   const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
@@ -46,8 +55,8 @@ export default function Home() {
     currentStreak: 7,
     totalProgress: 0
   })
-  const [loading, setLoading] = useState(true)
-  const [featuredCourse, setFeaturedCourse] = useState<Course | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [lastViewedCourse, setLastViewedCourse] = useState<LastViewedCourse | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -78,9 +87,57 @@ export default function Home() {
       const userCourses = userCoursesData?.map(item => item.courses).filter(Boolean) as Course[]
       setCourses(userCourses)
 
-      // Establecer curso destacado (el más reciente)
+      // Detectar el último curso visto basándose en lesson_progress
       if (userCourses.length > 0) {
-        setFeaturedCourse(userCourses[0])
+        const { data: recentProgress, error: progressError } = await supabase
+          .from('lesson_progress')
+          .select(`
+            course_id,
+            lesson_id,
+            updated_at,
+            watch_time
+          `)
+          .eq('user_id', user?.id)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (!progressError && recentProgress) {
+          // Encontrar el curso correspondiente
+          const lastCourse = userCourses.find(c => c.id === recentProgress.course_id)
+
+          if (lastCourse) {
+            // Calcular progreso del curso
+            const { data: allProgress } = await supabase
+              .from('lesson_progress')
+              .select('completed')
+              .eq('user_id', user?.id)
+              .eq('course_id', lastCourse.id)
+
+            const { data: totalLessons } = await supabase
+              .from('lessons')
+              .select('id')
+              .in('module_id',
+                await supabase
+                  .from('modules')
+                  .select('id')
+                  .eq('course_id', lastCourse.id)
+                  .then(res => res.data?.map(m => m.id) || [])
+              )
+
+            const completedCount = allProgress?.filter(p => p.completed).length || 0
+            const totalCount = totalLessons?.length || 1
+            const progress = Math.round((completedCount / totalCount) * 100)
+
+            setLastViewedCourse({
+              id: lastCourse.id,
+              title: lastCourse.title,
+              description: lastCourse.description || null,
+              thumbnail_url: lastCourse.thumbnail_url || null,
+              progress
+            })
+          }
+        }
       }
 
       // Obtener progreso para "Continúa viendo"
@@ -140,72 +197,8 @@ export default function Home() {
   return (
     <MainLayout>
       <div className="space-y-8">
-        {/* Hero Section - Curso Destacado */}
-        {featuredCourse && (
-          <div className="relative h-[70vh] rounded-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent z-10"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10"></div>
-            
-            {/* Background */}
-            <div className="absolute inset-0">
-              {featuredCourse.thumbnail_url ? (
-                <img 
-                  src={featuredCourse.thumbnail_url} 
-                  alt={featuredCourse.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900"></div>
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="relative z-20 h-full flex items-center">
-              <div className="max-w-7xl mx-auto px-8 w-full">
-                <div className="max-w-2xl">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Award className="w-6 h-6 text-yellow-400" />
-                    <span className="text-yellow-400 font-semibold">Curso Destacado</span>
-                  </div>
-                  
-                  <h1 className="text-6xl font-bold text-white mb-6 leading-tight">
-                    {featuredCourse.title}
-                  </h1>
-                  
-                  <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-                    {featuredCourse.description || 'Domina las habilidades más demandadas del mercado con este curso completo y práctico.'}
-                  </p>
-
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className="flex items-center gap-2">
-                      <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                      <span className="text-white font-semibold">4.9</span>
-                    </div>
-                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-gray-300">12 horas de contenido</span>
-                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                    <span className="text-gray-300">Nivel Intermedio</span>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => window.location.href = `/course/${featuredCourse.id}`}
-                      className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-200 transition-all duration-200 shadow-lg hover:scale-105"
-                    >
-                      <Play className="w-6 h-6 fill-current" />
-                      Continuar Curso
-                    </button>
-                    
-                    <button className="flex items-center gap-3 bg-gray-600/50 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-600/70 transition-all duration-200 backdrop-blur-sm">
-                      <BookOpen className="w-6 h-6" />
-                      Ver Detalles
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Hero Banner - Banners promocionales o último curso visto */}
+        <HeroBanner lastViewedCourse={lastViewedCourse} />
 
         {/* Stats Dashboard */}
        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

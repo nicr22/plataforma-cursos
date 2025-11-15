@@ -168,41 +168,81 @@ export default function ModuleManagement({ courseId, courseName, onBack }: Modul
 
   const handleLessonSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validar campos requeridos
+    if (!lessonFormData.title.trim()) {
+      alert('El título de la lección es requerido')
+      return
+    }
+
+    if (!lessonFormData.video_url.trim()) {
+      alert('Debes agregar una URL o código embebido de video')
+      return
+    }
+
+    if (!lessonFormData.module_id) {
+      alert('Debes seleccionar un módulo')
+      return
+    }
+
     setLoading(true)
 
     try {
+      console.log('📤 Guardando lección:', lessonFormData)
+
       // Calcular el siguiente order_index automáticamente
       const module = modules.find(m => m.id === lessonFormData.module_id)
       const nextOrder = module ? module.lessons.length + 1 : 1
 
       const lessonData = {
         ...lessonFormData,
-        order_index: editingItem && 'module_id' in editingItem ? 
+        order_index: editingItem && 'module_id' in editingItem ?
           (editingItem as Lesson).order_index : nextOrder
       }
 
       if (editingItem && 'module_id' in editingItem) {
         // Actualizar lección existente
-        const { error } = await supabase
+        console.log('🔄 Actualizando lección existente...')
+        const { data, error } = await supabase
           .from('lessons')
           .update(lessonData)
           .eq('id', editingItem.id)
+          .select()
 
-        if (error) throw error
+        if (error) {
+          console.error('❌ Error de Supabase:', error)
+          throw error
+        }
+
+        console.log('✅ Lección actualizada:', data)
+        alert('✅ Lección actualizada exitosamente')
       } else {
         // Crear nueva lección
-        const { error } = await supabase
+        console.log('➕ Creando nueva lección...')
+        const { data, error } = await supabase
           .from('lessons')
           .insert([lessonData])
+          .select()
 
-        if (error) throw error
+        if (error) {
+          console.error('❌ Error de Supabase:', error)
+          throw error
+        }
+
+        console.log('✅ Lección creada:', data)
+        alert('✅ Lección creada exitosamente')
       }
 
       await loadModulesAndLessons()
       resetForms()
-    } catch (error) {
-      console.error('Error saving lesson:', error)
-      alert('Error al guardar la lección')
+    } catch (error: any) {
+      console.error('❌ Error completo:', {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code
+      })
+      alert(`Error al guardar la lección: ${error?.message || 'Error desconocido'}`)
     } finally {
       setLoading(false)
     }

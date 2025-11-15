@@ -8,6 +8,14 @@ export interface User {
     updated_at: string
   }
   
+  export interface Category {
+    id: string
+    name: string
+    slug: string
+    icon: string
+    color: string
+  }
+
   export interface Course {
     id: string
     title: string
@@ -18,6 +26,9 @@ export interface User {
     created_by?: string
     created_at: string
     updated_at: string
+    course_code?: number
+    category_id?: string
+    categories?: Category
   }
   
   export interface Module {

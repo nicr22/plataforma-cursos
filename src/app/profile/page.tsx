@@ -145,16 +145,23 @@ export default function ProfilePage() {
 
       if (authError) throw authError
 
-      success('¡Contraseña actualizada!', 'La página se recargará automáticamente')
-      
-      // IGUAL QUE EL NOMBRE - RECARGAR PÁGINA
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
+      success('¡Contraseña actualizada!', 'Tu contraseña ha sido cambiada exitosamente')
 
-    } catch (err) {
+      // Limpiar el formulario
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+
+      // Cerrar el modal/sección de contraseña
+      setShowPasswordSection(false)
+      setShowPasswordModal(false)
+
+    } catch (err: any) {
       console.error('Error updating password:', err)
-      error('Error al cambiar contraseña', 'No se pudo actualizar tu contraseña. Intenta de nuevo.')
+      error('Error al cambiar contraseña', err?.message || 'No se pudo actualizar tu contraseña. Intenta de nuevo.')
+    } finally {
       setUpdatingPassword(false)
     }
   }

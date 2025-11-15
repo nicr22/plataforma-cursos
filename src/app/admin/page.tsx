@@ -1,22 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import CourseManagement from '@/components/admin/CourseManagement'
 import ModuleManagement from '@/components/admin/ModuleManagement'
 import UserManagement from '@/components/admin/UserManagement'
-import { 
-  BookOpen, 
-  Users, 
-  BarChart3, 
+import BannerManagement from '@/components/admin/BannerManagement'
+import {
+  BookOpen,
+  Users,
+  BarChart3,
   MessageSquare,
   ArrowLeft,
   Home,
-  Settings
+  Settings,
+  Image
 } from 'lucide-react'
 
-type AdminView = 'dashboard' | 'courses' | 'modules' | 'users' | 'analytics'
+type AdminView = 'dashboard' | 'courses' | 'modules' | 'users' | 'analytics' | 'banners'
 
 interface SelectedCourse {
   id: string
@@ -42,25 +44,15 @@ export default function AdminPage() {
     totalComments: 0
   })
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/')
-      return
-    }
+  const checkAdminRole = useCallback(async () => {
+    if (!user) return
 
-    if (user) {
-      checkAdminRole()
-      loadDashboardStats()
-    }
-  }, [user, loading, router])
-
-  const checkAdminRole = async () => {
     try {
       const { supabase } = await import('@/lib/supabase')
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single()
 
       if (profile?.role !== 'admin') {
@@ -70,9 +62,11 @@ export default function AdminPage() {
       console.error('Error checking admin role:', error)
       router.push('/')
     }
-  }
+  }, [user, router])
 
-  const loadDashboardStats = async () => {
+  const loadDashboardStats = useCallback(async () => {
+    if (!user) return
+
     try {
       const { supabase } = await import('@/lib/supabase')
       const [coursesRes, usersRes, lessonsRes, commentsRes] = await Promise.all([
@@ -91,7 +85,19 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error loading stats:', error)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/')
+      return
+    }
+
+    if (user) {
+      checkAdminRole()
+      loadDashboardStats()
+    }
+  }, [user, loading, router, checkAdminRole, loadDashboardStats])
 
   const handleManageContent = (courseId: string, courseTitle: string) => {
     setSelectedCourse({ id: courseId, title: courseTitle })
@@ -120,6 +126,7 @@ export default function AdminPage() {
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'courses', label: 'Cursos', icon: BookOpen },
     { id: 'users', label: 'Usuarios', icon: Users },
+    { id: 'banners', label: 'Banners', icon: Image },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   ]
 
@@ -148,14 +155,16 @@ export default function AdminPage() {
               </button>
             )}
             <h1 className="text-2xl font-bold text-white">
-              {activeView === 'modules' && selectedCourse 
+              {activeView === 'modules' && selectedCourse
                 ? `Gestión de Contenido - ${selectedCourse.title}`
-                : activeView === 'dashboard' 
+                : activeView === 'dashboard'
                 ? 'Panel Administrativo'
                 : activeView === 'courses'
                 ? 'Gestión de Cursos'
                 : activeView === 'users'
                 ? 'Gestión de Usuarios'
+                : activeView === 'banners'
+                ? 'Gestión de Banners'
                 : 'Analytics'
               }
             </h1>
@@ -290,6 +299,10 @@ export default function AdminPage() {
 
           {activeView === 'users' && (
             <UserManagement />
+          )}
+
+          {activeView === 'banners' && (
+            <BannerManagement />
           )}
 
           {activeView === 'analytics' && (

@@ -8,25 +8,20 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import LoginForm from '@/components/auth/LoginForm'
-import { supabase } from '@/lib/supabase'
-import { 
-  Search, 
-  User, 
-  LogOut, 
+import {
+  User,
+  LogOut,
   Settings,
   Home,
   BookOpen,
-  TrendingUp,
-  Users,
-  MessageCircle,
-  Star,
-  Bell,
-  Menu,
   UserCircle,
   Play,
   Award,
-  Clock
+  Clock,
+  Bell
 } from 'lucide-react'
+import NotificationBell from '@/components/ui/NotificationBell'
+import { supabase } from '@/lib/supabase'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -35,26 +30,72 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   const { user, profile, loading, signOut } = useAuth()
   const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState('')
   const [isAdmin, setIsAdmin] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen] = useState(true)
   const [activePage, setActivePage] = useState('dashboard')
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     if (user && profile) {
       setIsAdmin(profile.role === 'admin')
+      loadUnreadCount()
     }
-    
+
     // Detectar página activa basada en la URL
     const path = window.location.pathname
-    if (path === '/') setActivePage('dashboard')  
+    if (path === '/') setActivePage('dashboard')
     else if (path === '/courses') setActivePage('courses')
+    else if (path === '/catalog') setActivePage('catalog')
+    else if (path === '/notifications') setActivePage('notifications')
     else if (path === '/progress') setActivePage('progress')
     else if (path === '/community') setActivePage('community')
     else if (path === '/chat') setActivePage('chat')
     else if (path === '/favorites') setActivePage('favorites')
     else if (path === '/profile') setActivePage('profile')
   }, [user, profile])
+
+  // Cargar contador de notificaciones no leídas
+  const loadUnreadCount = async () => {
+    if (!user) return
+
+    try {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+
+      if (error) throw error
+      setUnreadCount(count || 0)
+    } catch (error) {
+      console.error('Error loading unread count:', error)
+    }
+  }
+
+  // Suscribirse a cambios en notificaciones en tiempo real
+  useEffect(() => {
+    if (!user) return
+
+    const channel = supabase
+      .channel('notifications-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          loadUnreadCount()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user])
 
   const handleLogout = async () => {
     try {
@@ -70,69 +111,43 @@ export default function MainLayout({ children }: MainLayoutProps) {
   }
 
   const menuItems = [
-    { 
-      id: 'dashboard', 
-      label: 'Dashboard', 
-      icon: Home, 
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: Home,
       path: '/',
       active: activePage === 'dashboard',
       badge: null
     },
-    { 
-      id: 'courses', 
-      label: 'Mis Cursos', 
-      icon: BookOpen, 
+    {
+      id: 'courses',
+      label: 'Mis Cursos',
+      icon: BookOpen,
       path: '/courses',
       active: activePage === 'courses',
       badge: null
     },
-    { 
-      id: 'progress', 
-      label: 'Mi Progreso', 
-      icon: TrendingUp, 
-      path: '/progress',
-      active: activePage === 'progress',
+    {
+      id: 'catalog',
+      label: 'Ofertas',
+      icon: Award,
+      path: '/catalog',
+      active: activePage === 'catalog',
       badge: null
     },
-    { 
-      id: 'community', 
-      label: 'Comunidad', 
-      icon: Users, 
-      path: '/community',
-      active: activePage === 'community',
-      badge: '3'
-    },
-    { 
-      id: 'chat', 
-      label: 'Mensajes', 
-      icon: MessageCircle, 
-      path: '/chat',
-      active: activePage === 'chat',
-      badge: '2'
-    },
-    { 
-      id: 'favorites', 
-      label: 'Favoritos', 
-      icon: Star, 
-      path: '/favorites',
-      active: activePage === 'favorites',
-      badge: null
+    {
+      id: 'notifications',
+      label: 'Notificaciones',
+      icon: Bell,
+      path: '/notifications',
+      active: activePage === 'notifications',
+      badge: unreadCount > 0 ? unreadCount : null
     }
   ]
 
+  // Sin pantalla de carga - mostrar directamente LoginForm si no hay usuario
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-black to-gray-900">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <div className="absolute inset-0 w-16 h-16 border-4 border-red-300 border-t-transparent rounded-full animate-spin mx-auto" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-          </div>
-          <div className="text-white text-xl font-semibold">EduPlatform</div>
-          <div className="text-gray-400 text-sm mt-2">Cargando tu experiencia de aprendizaje...</div>
-        </div>
-      </div>
-    )
+    return null // Render nada mientras carga
   }
 
   if (!user) {
@@ -141,10 +156,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex">
-      {/* Sidebar Estilo Netflix */}
-      <div className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-gray-900 via-gray-800 to-black transition-all duration-300 flex flex-col border-r border-gray-700 shadow-2xl`}>
+      {/* Sidebar Estilo Netflix - FIJO */}
+      <div className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-gray-900 via-gray-800 to-black transition-all duration-300 flex flex-col border-r border-gray-700 shadow-2xl fixed left-0 top-0 bottom-0 z-50`}>
         {/* Logo Section */}
-        <div className="p-6 border-b border-gray-700">
+        <div className="p-6 border-b border-gray-700 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-red-500 rounded-xl flex items-center justify-center shadow-lg">
               <Play className="text-white w-5 h-5" />
@@ -158,8 +173,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </div>
         </div>
 
-        {/* Quick Stats */}
-        {sidebarOpen && (
+        {/* Quick Stats - OCULTO */}
+        {false && sidebarOpen && (
           <div className="p-6 border-b border-gray-700">
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gradient-to-r from-blue-600/20 to-blue-500/10 p-3 rounded-lg border border-blue-500/20">
@@ -180,7 +195,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </div>
         )}
 
-        {/* Navigation Menu */}
+        {/* Navigation Menu - SIN SCROLL */}
         <nav className="flex-1 p-4">
           <div className="space-y-2">
             {menuItems.map((item) => {
@@ -258,8 +273,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
           )}
         </nav>
 
-        {/* User Section - CON BOTÓN DE CERRAR SESIÓN BIEN VISIBLE */}
-        <div className="p-4 border-t border-gray-700 bg-gradient-to-r from-gray-800/50 to-gray-900/50">
+        {/* User Section - SIEMPRE VISIBLE EN LA PARTE INFERIOR */}
+        <div className="p-4 border-t border-gray-700 bg-gradient-to-r from-gray-800/50 to-gray-900/50 flex-shrink-0">
           {/* Información del Usuario */}
           <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-gray-800/30 border border-gray-600/30">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
@@ -276,9 +291,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </div>
               </div>
             )}
+
+            {/* Botón de Notificaciones */}
+            <NotificationBell />
           </div>
-          
-          {/* Botón de Cerrar Sesión - MUY VISIBLE */}
+
+          {/* Botón de Cerrar Sesión - SIEMPRE VISIBLE */}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-red-600/20 hover:text-red-400 hover:border-red-500/30 transition-all duration-200 border border-gray-600/30 hover:shadow-lg"
@@ -290,7 +308,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </div>
 
       {/* Main Content Area - SIN HEADER BLANCO */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className={`flex-1 flex flex-col min-h-screen ${sidebarOpen ? 'ml-72' : 'ml-20'} transition-all duration-300`}>
         {/* HEADER COMENTADO - NO SE MUESTRA */}
         {/*
         <header className="bg-gradient-to-r from-black/80 via-gray-900/80 to-black/80 backdrop-blur-md border-b border-gray-700/50 px-8 py-6 shadow-2xl">

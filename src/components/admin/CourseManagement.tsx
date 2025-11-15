@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import { 
   Plus, 
   Edit, 
@@ -22,6 +23,14 @@ import {
   RefreshCw
 } from 'lucide-react'
 
+interface Category {
+  id: string
+  name: string
+  slug: string
+  icon: string
+  color: string
+}
+
 interface Course {
   id: string
   title: string
@@ -29,7 +38,13 @@ interface Course {
   price: number
   thumbnail_url: string
   is_active: boolean
+  is_published_in_catalog?: boolean
+  hotmart_url?: string
+  category_id?: string
   created_at: string
+  category?: Category
+  course_code?: number
+  hotmart_product_id?: number
 }
 
 interface CourseManagementProps {
@@ -41,9 +56,12 @@ type SortOrder = 'asc' | 'desc'
 type StatusFilter = 'all' | 'active' | 'inactive'
 
 export default function CourseManagement({ onManageContent }: CourseManagementProps) {
+  const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editingCourse, setEditingCourse] = useState<Course | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -64,22 +82,44 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
     description: '',
     price: 0,
     thumbnail_url: '',
-    is_active: true
+    is_active: true,
+    is_published_in_catalog: false,
+    hotmart_url: '',
+    category_id: '',
+    hotmart_product_id: ''
   })
 
   useEffect(() => {
     loadCourses()
+    loadCategories()
   }, [])
 
   useEffect(() => {
     filterAndSortCourses()
   }, [courses, searchTerm, statusFilter, sortField, sortOrder, priceRange])
 
+  const loadCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name')
+
+      if (error) throw error
+      setCategories(data || [])
+    } catch (error) {
+      console.error('Error loading categories:', error)
+    }
+  }
+
   const loadCourses = async () => {
     try {
       const { data, error } = await supabase
         .from('courses')
-        .select('*')
+        .select(`
+          *,
+          category:categories(id, name, slug, icon, color)
+        `)
         .order('created_at', { ascending: false })
 
       if (error) throw error
@@ -196,7 +236,7 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
       const filePath = `course-thumbnails/${fileName}`
 
       // Subir a Supabase Storage
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('course-images')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -242,33 +282,134 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setSubmitting(true)
 
     try {
-      if (editingCourse) {
-        // Actualizar curso existente
-        const { error } = await supabase
-          .from('courses')
-          .update(formData)
-          .eq('id', editingCourse.id)
+      // ============================================
+      // PREPARAR DATOS - SIMPLE Y DIRECTO
+      // ============================================
 
-        if (error) throw error
-      } else {
-        // Crear nuevo curso
-        const { error } = await supabase
-          .from('courses')
-          .insert([formData])
+      // Limpiar category_id: null si está vacío
+      const cleanCategoryId = formData.category_id && formData.category_id.trim()
+        ? formData.category_id.trim()
+        : null
 
-        if (error) throw error
+      // Limpiar y normalizar hotmart_url
+      let cleanHotmartUrl = null
+      if (formData.hotmart_url && formData.hotmart_url.trim()) {
+        cleanHotmartUrl = formData.hotmart_url.trim()
+        // Eliminar todas las barras al final
+        cleanHotmartUrl = cleanHotmartUrl.replace(/\/+$/, '')
       }
 
+      // Limpiar thumbnail_url: null si está vacío
+      const cleanThumbnailUrl = formData.thumbnail_url && formData.thumbnail_url.trim()
+        ? formData.thumbnail_url.trim()
+        : null
+
+      // Limpiar hotmart_product_id: null si está vacío
+      const cleanHotmartProductId = formData.hotmart_product_id && formData.hotmart_product_id.toString().trim()
+        ? parseInt(formData.hotmart_product_id.toString().trim())
+        : null
+
+      // Objeto final limpio
+      const courseData: any = {
+        title: formData.title.trim(),
+        description: formData.description || null,
+        price: parseFloat(formData.price.toString()) || 0,
+        thumbnail_url: cleanThumbnailUrl,
+        is_active: formData.is_active === true,
+        is_published_in_catalog: formData.is_published_in_catalog === true,
+        hotmart_url: cleanHotmartUrl,
+        category_id: cleanCategoryId,
+        hotmart_product_id: cleanHotmartProductId
+      }
+
+      // Agregar created_by solo al crear (no al editar)
+      if (!editingCourse && user?.id) {
+        courseData.created_by = user.id
+      }
+
+      // ============================================
+      // VALIDACIONES ANTES DE ENVIAR
+      // ============================================
+
+      if (!courseData.title) {
+        alert('❌ El título es obligatorio')
+        setSubmitting(false)
+        return
+      }
+
+      if (courseData.is_published_in_catalog && !courseData.hotmart_url) {
+        alert('❌ Si publicas en catálogo, debes proporcionar la URL de pago (Hotmart, Stripe, etc.)')
+        setSubmitting(false)
+        return
+      }
+
+      // Validar que la URL sea válida
+      if (courseData.hotmart_url) {
+        try {
+          new URL(courseData.hotmart_url)
+        } catch (e) {
+          alert('❌ La URL de pago no es válida. Asegúrate de incluir el protocolo (https://)')
+          setSubmitting(false)
+          return
+        }
+      }
+
+      // ============================================
+      // ENVIAR A SUPABASE
+      // ============================================
+
+      let result
+
+      if (editingCourse) {
+        // ACTUALIZAR
+        result = await supabase
+          .from('courses')
+          .update(courseData)
+          .eq('id', editingCourse.id)
+          .select()
+      } else {
+        // CREAR
+        result = await supabase
+          .from('courses')
+          .insert([courseData])
+          .select()
+      }
+
+      // ============================================
+      // MANEJAR RESPUESTA
+      // ============================================
+
+      const { data, error } = result
+
+      if (error) {
+        console.error('Error al guardar curso:', error)
+        alert(`❌ Error al guardar el curso: ${error.message}`)
+        setSubmitting(false)
+        return
+      }
+
+      if (!data || data.length === 0) {
+        console.error('No se recibió data de Supabase')
+        alert('❌ Error: No se recibió respuesta del servidor')
+        setSubmitting(false)
+        return
+      }
+
+      // ✅ ÉXITO
+      alert(editingCourse ? '✅ Curso actualizado correctamente' : '✅ Curso creado correctamente')
+
+      // Recargar y limpiar
       await loadCourses()
       resetForm()
-    } catch (error) {
-      console.error('Error saving course:', error)
-      alert('Error al guardar el curso')
+
+    } catch (error: any) {
+      console.error('Error inesperado:', error)
+      alert(`❌ Error inesperado: ${error?.message || 'Error desconocido'}`)
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
@@ -279,7 +420,11 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
       description: course.description,
       price: course.price,
       thumbnail_url: course.thumbnail_url,
-      is_active: course.is_active
+      is_active: course.is_active,
+      is_published_in_catalog: course.is_published_in_catalog || false,
+      hotmart_url: course.hotmart_url || '',
+      category_id: course.category_id || '',
+      hotmart_product_id: course.hotmart_product_id?.toString() || ''
     })
     setImagePreview(course.thumbnail_url || null)
     setShowForm(true)
@@ -322,7 +467,11 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
       description: '',
       price: 0,
       thumbnail_url: '',
-      is_active: true
+      is_active: true,
+      is_published_in_catalog: false,
+      hotmart_url: '',
+      category_id: '',
+      hotmart_product_id: ''
     })
     setEditingCourse(null)
     setShowForm(false)
@@ -634,6 +783,42 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
                 />
               </div>
 
+              {/* Categoría */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Categoría (Opcional)
+                </label>
+                <select
+                  value={formData.category_id}
+                  onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                >
+                  <option value="">Sin categoría</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.icon} {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* ID del Producto en Hotmart */}
+              <div className="bg-orange-600/10 p-4 rounded-xl border border-orange-500/30">
+                <label className="block text-white font-medium mb-2">
+                  🔢 ID del Producto en Hotmart (Integración)
+                </label>
+                <input
+                  type="number"
+                  value={formData.hotmart_product_id}
+                  onChange={(e) => setFormData({ ...formData, hotmart_product_id: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+                  placeholder="Ej: 2484567"
+                />
+                <p className="text-gray-400 text-sm mt-2">
+                  💡 Este es el Product ID que te proporciona Hotmart (opcional). Se usa para vincular las compras del webhook con este curso
+                </p>
+              </div>
+
               {/* Estado activo */}
               <div className="flex items-center gap-3 p-4 bg-gray-700/50 rounded-xl border border-gray-600">
                 <input
@@ -644,9 +829,54 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
                   className="w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
                 />
                 <label htmlFor="is_active" className="text-white font-medium">
-                  Curso activo y visible para estudiantes
+                  Curso activo y visible para estudiantes que lo tienen
                 </label>
               </div>
+
+              {/* Publicar en catálogo - CAMBIADO A SELECT */}
+              <div className="p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-xl border border-purple-500/30">
+                <label className="block text-white font-medium mb-2">
+                  📢 Publicar en catálogo de ofertas
+                </label>
+                <select
+                  value={formData.is_published_in_catalog ? 'true' : 'false'}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    is_published_in_catalog: e.target.value === 'true'
+                  })}
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                >
+                  <option value="false">❌ NO - Solo para usuarios asignados</option>
+                  <option value="true">✅ SÍ - Publicar en catálogo público</option>
+                </select>
+                <p className="text-gray-400 text-sm mt-2">
+                  Si seleccionas "SÍ", el curso aparecerá en la página de ofertas para usuarios que NO lo tengan
+                </p>
+              </div>
+
+              {/* URL de pago (solo si está publicado en catálogo) */}
+              {formData.is_published_in_catalog && (
+                <div className="bg-purple-600/10 p-4 rounded-xl border border-purple-500/30">
+                  <label className="block text-white font-medium mb-2">
+                    🔗 URL de Checkout/Ventas *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.hotmart_url}
+                    onChange={(e) => {
+                      // Limpiar la URL automáticamente mientras escribe
+                      const cleanUrl = e.target.value.trim().replace(/\/+$/, '')
+                      setFormData({ ...formData, hotmart_url: cleanUrl })
+                    }}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                    placeholder="https://pay.hotmart.com/producto (sin / al final)"
+                    required={formData.is_published_in_catalog}
+                  />
+                  <p className="text-gray-400 text-sm mt-2">
+                    💡 URL de tu plataforma de pago (Hotmart, Stripe, Gumroad, etc). Los usuarios serán redirigidos aquí para comprar el curso
+                  </p>
+                </div>
+              )}
 
               {/* Botones */}
               <div className="flex justify-end gap-4 pt-6 border-t border-gray-700">
@@ -659,11 +889,11 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || uploading}
+                  disabled={submitting || uploading}
                   className="flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all duration-200 disabled:opacity-50 shadow-lg"
                 >
                   <Save className="w-5 h-5 mr-2" />
-                  {loading ? 'Guardando...' : 'Guardar Curso'}
+                  {submitting ? 'Guardando...' : 'Guardar Curso'}
                 </button>
               </div>
             </form>
@@ -677,7 +907,10 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
           <table className="w-full">
             <thead className="bg-gradient-to-r from-gray-700 to-gray-800">
               <tr>
-                <th 
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                  Código
+                </th>
+                <th
                   className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-600 transition-colors"
                   onClick={() => handleSort('title')}
                 >
@@ -686,7 +919,10 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
                     {getSortIcon('title')}
                   </div>
                 </th>
-                <th 
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                  Categoría
+                </th>
+                <th
                   className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-600 transition-colors"
                   onClick={() => handleSort('price')}
                 >
@@ -698,7 +934,7 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                   Estado
                 </th>
-                <th 
+                <th
                   className="px-6 py-4 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-600 transition-colors"
                   onClick={() => handleSort('created_at')}
                 >
@@ -715,6 +951,11 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
             <tbody className="divide-y divide-gray-700">
               {filteredCourses.map((course) => (
                 <tr key={course.id} className="hover:bg-gray-700/50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="inline-flex items-center px-3 py-1 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-600/30 font-mono font-bold text-sm">
+                      #{course.course_code || '---'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="w-16 h-16 rounded-xl overflow-hidden mr-4 bg-gray-700 flex-shrink-0">
@@ -739,6 +980,23 @@ export default function CourseManagement({ onManageContent }: CourseManagementPr
                         </div>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {course.category ? (
+                      <span
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                        style={{
+                          backgroundColor: `${course.category.color}20`,
+                          color: course.category.color,
+                          border: `1px solid ${course.category.color}40`
+                        }}
+                      >
+                        <span className="mr-1">{course.category.icon}</span>
+                        {course.category.name}
+                      </span>
+                    ) : (
+                      <span className="text-gray-500 text-xs">Sin categoría</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-lg font-semibold text-green-400">

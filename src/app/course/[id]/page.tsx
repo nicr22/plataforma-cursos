@@ -10,12 +10,11 @@ import { supabase } from '@/lib/supabase'
 import { Course, Module, Lesson, LessonProgress } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import Comments from '@/components/course/Comments'
-import { 
-  PlayCircle, 
-  CheckCircle, 
-  ArrowLeft, 
-  MessageSquare, 
-  User, 
+import {
+  PlayCircle,
+  CheckCircle,
+  ArrowLeft,
+  User,
   LogOut,
   Clock,
   ChevronDown,
@@ -138,41 +137,56 @@ export default function CoursePage() {
 
   const updateProgress = async (lessonId: string, watchedSeconds: number, isCompleted: boolean) => {
     try {
-      if (!user?.id || !lessonId) return;
+      if (!user?.id || !lessonId || !courseId) {
+        console.warn('Cannot update progress: missing user, lesson or course ID');
+        return;
+      }
 
       const progressData = {
         user_id: user.id,
         lesson_id: lessonId,
+        course_id: courseId, // IMPORTANTE: Añadido course_id
         watch_time: Math.floor(watchedSeconds),
         completed: isCompleted,
         completed_at: isCompleted ? new Date().toISOString() : null,
         updated_at: new Date().toISOString()
       };
 
-      const { error } = await supabase
+      console.log('💾 Guardando progreso:', progressData);
+
+      const { data, error } = await supabase
         .from('lesson_progress')
         .upsert(progressData, {
           onConflict: 'user_id,lesson_id'
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error al guardar progreso:', error);
+        throw error;
+      }
 
-      // Actualizar estado local
+      console.log('✅ Progreso guardado exitosamente:', data);
+
+      // Actualizar estado local con los datos retornados del servidor
       setProgress(prev => ({
         ...prev,
         [lessonId]: {
-          id: prev[lessonId]?.id || '',
+          id: data?.id || prev[lessonId]?.id || '',
           user_id: user.id,
           lesson_id: lessonId,
           watch_time: Math.floor(watchedSeconds),
           completed: isCompleted,
           completed_at: isCompleted ? new Date().toISOString() : null,
-          created_at: prev[lessonId]?.created_at || new Date().toISOString(),
+          created_at: data?.created_at || prev[lessonId]?.created_at || new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
       }));
     } catch (error) {
-      console.error('Error updating progress:', error);
+      console.error('💥 Error updating progress:', error);
+      // No mostrar alerta por cada error, solo loggear
+      console.error('Error details:', error);
     }
   };
 
@@ -287,14 +301,6 @@ export default function CoursePage() {
 
             {/* Lado derecho - Usuario y acciones */}
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => window.location.href = `/course/${courseId}/community`}
-                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 shadow-lg"
-              >
-                <MessageSquare className="h-5 w-5" />
-                Comunidad
-              </button>
-
               {/* Usuario */}
               <div className="flex items-center gap-4 bg-gray-800/50 rounded-xl p-3 border border-gray-600/30">
                 <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
@@ -516,20 +522,23 @@ export default function CoursePage() {
           {selectedLesson ? (
             <div className="flex flex-col h-full">
               {/* Área del video */}
-              <div className="bg-black relative">
-                <div className="aspect-video w-full">
-                  {selectedLesson.video_url && isClient ? (
-                    <ReactPlayer
-                      url={selectedLesson.video_url}
-                      width="100%"
-                      height="100%"
-                      controls
-                      onProgress={handleVideoProgress}
-                      onDuration={handleVideoDuration}
-                      progressInterval={1000}
-                    />
+              <div className="bg-black py-6 flex justify-center">
+                <div className="w-full max-w-[1400px] px-4">
+                  <div className="relative w-full" style={{ paddingTop: '56.25%' }}> {/* 16:9 Aspect Ratio */}
+                    {selectedLesson.video_url && isClient ? (
+                      <div className="absolute inset-0 rounded-lg overflow-hidden">
+                        <ReactPlayer
+                          url={selectedLesson.video_url}
+                          width="100%"
+                          height="100%"
+                          controls
+                          onProgress={handleVideoProgress}
+                          onDuration={handleVideoDuration}
+                          progressInterval={1000}
+                        />
+                      </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white">
+                    <div className="absolute inset-0 flex items-center justify-center text-white">
                       <div className="text-center">
                         <PlayCircle className="h-20 w-20 mx-auto mb-6 text-gray-400" />
                         <p className="text-xl mb-2">
@@ -543,7 +552,8 @@ export default function CoursePage() {
                         </p>
                       </div>
                     </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
               

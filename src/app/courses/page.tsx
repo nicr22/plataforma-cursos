@@ -26,7 +26,7 @@ import {
 export default function CoursesPage() {
   const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false) // Cambiar a false para transición fluida
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('recent') // recent, title, progress
   const [viewMode, setViewMode] = useState('grid') // grid, list
@@ -39,7 +39,9 @@ export default function CoursesPage() {
   }, [user])
 
   const fetchUserCourses = async () => {
+    setLoading(true)
     try {
+      // Obtener cursos del usuario con JOIN
       const { data: userCoursesData, error: coursesError } = await supabase
         .from('user_courses')
         .select(`
@@ -51,21 +53,34 @@ export default function CoursesPage() {
             description,
             thumbnail_url,
             price,
-            created_at
+            created_at,
+            course_code,
+            category_id,
+            categories (
+              id,
+              name,
+              slug,
+              icon,
+              color
+            )
           )
         `)
         .eq('user_id', user?.id)
 
-      if (coursesError) throw coursesError
+      if (coursesError) {
+        console.error('Error fetching courses:', coursesError)
+        throw coursesError
+      }
 
-      const userCourses = userCoursesData?.map(item => ({
-        ...item.courses,
-        enrolled_at: item.created_at
-      })).filter(Boolean) as Course[]
-      
+      // Mapear y filtrar cursos válidos
+      const userCourses = (userCoursesData || [])
+        .map((item: any) => item.courses)
+        .filter((course: any) => course !== null && course !== undefined && course.id) as Course[]
+
       setCourses(userCourses)
     } catch (error) {
       console.error('Error fetching courses:', error)
+      setCourses([])
     } finally {
       setLoading(false)
     }
@@ -74,18 +89,21 @@ export default function CoursesPage() {
   // Filtrar y ordenar cursos
   const filteredAndSortedCourses = courses
     .filter(course => {
+      // Validar que el curso tenga los campos necesarios
+      if (!course || !course.title) return false
+
       const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (course.description || '').toLowerCase().includes(searchTerm.toLowerCase())
-      
+
       // Aquí puedes agregar lógica de filtros más adelante
       return matchesSearch
     })
     .sort((a, b) => {
       switch (sortBy) {
         case 'title':
-          return a.title.localeCompare(b.title)
+          return (a.title || '').localeCompare(b.title || '')
         case 'recent':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
         default:
           return 0
       }
@@ -242,7 +260,16 @@ export default function CoursesPage() {
                       <h3 className="text-white font-semibold text-lg mb-2 line-clamp-2 group-hover:text-gray-300 transition-colors">
                         {course.title}
                       </h3>
-                      
+
+                      {/* Código del curso debajo del título */}
+                      {course.course_code && (
+                        <div className="mb-2">
+                          <span className="inline-flex items-center px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg text-xs font-mono font-bold">
+                            #{course.course_code}
+                          </span>
+                        </div>
+                      )}
+
                       <p className="text-gray-400 text-sm mb-3 line-clamp-2">
                         {course.description || 'Descripción del curso disponible próximamente'}
                       </p>
@@ -252,15 +279,22 @@ export default function CoursesPage() {
                           <Star className="w-4 h-4 text-yellow-400 fill-current" />
                           <span className="text-gray-300 text-sm">5.0</span>
                         </div>
-                        <div className="w-1 h-1 bg-gray-500 rounded-full"></div>
-                        <span className="text-gray-400 text-sm">Intermedio</span>
                       </div>
 
-                      <div className="flex gap-2">
-                        <span className="px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full text-xs font-medium border border-blue-500/30">
-                          Programación
-                        </span>
-                      </div>
+                      {course.categories && (
+                        <div className="flex gap-2">
+                          <span
+                            className="px-3 py-1 rounded-full text-xs font-medium border"
+                            style={{
+                              backgroundColor: `${course.categories.color}20`,
+                              color: course.categories.color,
+                              borderColor: `${course.categories.color}40`
+                            }}
+                          >
+                            {course.categories.icon} {course.categories.name}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -300,6 +334,11 @@ export default function CoursesPage() {
                     </div>
 
                     <div className="flex items-center gap-4">
+                      {course.course_code && (
+                        <span className="px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg text-sm font-mono font-bold">
+                          #{course.course_code}
+                        </span>
+                      )}
                       <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">
                         Adquirido
                       </span>
