@@ -277,10 +277,10 @@ export default function CatalogPage() {
                       />
                     ) : null}
                     <div
-                      className="w-full h-full bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 flex items-center justify-center"
+                      className="absolute inset-0 w-full h-full bg-gradient-to-br from-purple-600 via-pink-600 to-red-600 flex items-center justify-center"
                       style={{ display: course.thumbnail_url ? 'none' : 'flex' }}
                     >
-                      <BookOpen className="w-20 h-20 text-white opacity-90" />
+                      <BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-white opacity-70" />
                     </div>
 
                     {/* Nuevo Badge */}
@@ -291,17 +291,17 @@ export default function CatalogPage() {
                     </div>
                   </div>
 
-                  <div className="p-6">
+                  <div className="p-4">
                     {/* Title */}
-                    <h3 className="text-xl font-bold text-white mb-2 line-clamp-2 group-hover:text-red-400 transition-colors">
+                    <h3 className="text-base md:text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-red-400 transition-colors">
                       {course.title}
                     </h3>
 
                     {/* Category */}
                     {course.category && (
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <span
-                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                           style={{
                             backgroundColor: `${course.category.color}20`,
                             color: course.category.color,
@@ -316,22 +316,22 @@ export default function CatalogPage() {
 
                     {/* Description */}
                     {course.description && (
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-3">
+                      <p className="text-gray-400 text-xs mb-3 line-clamp-2">
                         {course.description}
                       </p>
                     )}
 
                     {/* Price */}
-                    <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-5 h-5 text-green-400" />
-                        <span className="text-2xl font-bold text-white">
+                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-700">
+                      <div className="flex items-center gap-1.5">
+                        <DollarSign className="w-4 h-4 text-green-400" />
+                        <span className="text-lg font-bold text-white">
                           {formatPrice(course.price)}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                        <span className="text-white font-semibold">5.0</span>
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        <span className="text-white text-sm font-semibold">5.0</span>
                       </div>
                     </div>
 
@@ -341,15 +341,15 @@ export default function CatalogPage() {
                         href={course.hotmart_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-6 py-3 rounded-lg font-semibold transition-all hover:shadow-lg hover:shadow-red-500/50"
+                        className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-4 py-2.5 rounded-lg text-sm font-semibold transition-all hover:shadow-lg hover:shadow-red-500/50"
                       >
                         Comprar Ahora
-                        <ExternalLink className="w-5 h-5" />
+                        <ExternalLink className="w-4 h-4" />
                       </a>
                     ) : (
                       <button
                         disabled
-                        className="w-full bg-gray-700 text-gray-400 px-6 py-3 rounded-lg font-semibold cursor-not-allowed"
+                        className="w-full bg-gray-700 text-gray-400 px-4 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed"
                       >
                         No disponible
                       </button>
