@@ -336,7 +336,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </div>
 
       {/* Main Content Area - SIN HEADER BLANCO */}
-      <div className={`flex-1 flex flex-col min-h-screen lg:${sidebarOpen ? 'ml-72' : 'ml-20'} transition-all duration-300`}>
+      <div className={`flex-1 flex flex-col min-h-screen ${sidebarOpen ? 'lg:ml-72' : 'lg:ml-20'} transition-all duration-300`}>
         {/* HEADER COMENTADO - NO SE MUESTRA */}
         {/*
         <header className="bg-gradient-to-r from-black/80 via-gray-900/80 to-black/80 backdrop-blur-md border-b border-gray-700/50 px-8 py-6 shadow-2xl">
