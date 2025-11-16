@@ -44,33 +44,32 @@ export default function CoursePage() {
   const [progress, setProgress] = useState<Record<string, LessonProgress>>({})
   const [watchTime, setWatchTime] = useState(0)
   const [videoDuration, setVideoDuration] = useState(0)
-  const [isClient, setIsClient] = useState(false)
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, loading: authLoading, signOut } = useAuth()
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
+    // Solo ejecutar cuando auth haya terminado de cargar
+    if (authLoading) return
 
-  useEffect(() => {
     if (courseId && user) {
       fetchCourseData()
       fetchProgress()
-    } else if (!user && !loading) {
-      // Si no hay usuario, redirigir al login
+    } else if (!user) {
+      // Si no hay usuario después de auth cargar, redirigir
       window.location.href = '/'
     }
-  }, [courseId, user])
+  }, [courseId, user, authLoading])
 
   const fetchCourseData = async () => {
     try {
+      setLoading(true)
+
       if (!user?.id) {
         console.error('No user ID available')
+        setCourse(null)
         setLoading(false)
         return
       }
-
-      console.log('Fetching course data for:', courseId, 'user:', user.id)
 
       // Verificar acceso al curso
       const { data: access, error: accessError } = await supabase
@@ -80,10 +79,8 @@ export default function CoursePage() {
         .eq('course_id', courseId)
         .single()
 
-      console.log('Access check:', { access, accessError })
-
       if (accessError || !access) {
-        console.error('No access to course:', accessError)
+        console.error('No tienes acceso a este curso')
         setCourse(null)
         setLoading(false)
         return
@@ -102,10 +99,8 @@ export default function CoursePage() {
         .eq('id', courseId)
         .single()
 
-      console.log('Course data:', { data, error })
-
-      if (error) {
-        console.error('Error fetching course:', error)
+      if (error || !data) {
+        console.error('Error al cargar el curso:', error)
         setCourse(null)
         setLoading(false)
         return
@@ -122,21 +117,19 @@ export default function CoursePage() {
           }))
       }
 
-      console.log('Processed course data:', courseData)
-
       setCourse(courseData)
 
       // Expandir el primer módulo por defecto y seleccionar primera lección
-      if (courseData.modules && courseData.modules.length > 0) {
+      if (courseData.modules?.length > 0) {
         setExpandedModules(new Set([courseData.modules[0].id]))
-        if (courseData.modules[0].lessons && courseData.modules[0].lessons.length > 0) {
+        if (courseData.modules[0].lessons?.length > 0) {
           setSelectedLesson(courseData.modules[0].lessons[0])
         }
       }
 
       setLoading(false)
     } catch (error) {
-      console.error('Error in fetchCourseData:', error)
+      console.error('Error crítico al cargar curso:', error)
       setCourse(null)
       setLoading(false)
     }
@@ -552,7 +545,7 @@ export default function CoursePage() {
               <div className="bg-black py-3 sm:py-6 flex justify-center">
                 <div className="w-full max-w-[1400px] px-2 sm:px-4">
                   <div className="relative w-full" style={{ paddingTop: '56.25%' }}> {/* 16:9 Aspect Ratio */}
-                    {selectedLesson.video_url && isClient ? (
+                    {selectedLesson.video_url && typeof window !== 'undefined' ? (
                       <div className="absolute inset-0 rounded-lg overflow-hidden">
                         <ReactPlayer
                           url={selectedLesson.video_url}
