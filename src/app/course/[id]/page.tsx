@@ -56,21 +56,37 @@ export default function CoursePage() {
     if (courseId && user) {
       fetchCourseData()
       fetchProgress()
+    } else if (!user && !loading) {
+      // Si no hay usuario, redirigir al login
+      window.location.href = '/'
     }
   }, [courseId, user])
 
   const fetchCourseData = async () => {
     try {
+      if (!user?.id) {
+        console.error('No user ID available')
+        setLoading(false)
+        return
+      }
+
+      console.log('Fetching course data for:', courseId, 'user:', user.id)
+
       // Verificar acceso al curso
       const { data: access, error: accessError } = await supabase
         .from('user_courses')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('course_id', courseId)
         .single()
 
+      console.log('Access check:', { access, accessError })
+
       if (accessError || !access) {
-        throw new Error('No tienes acceso a este curso')
+        console.error('No access to course:', accessError)
+        setCourse(null)
+        setLoading(false)
+        return
       }
 
       // Obtener datos del curso con módulos y lecciones
@@ -86,31 +102,42 @@ export default function CoursePage() {
         .eq('id', courseId)
         .single()
 
-      if (error) throw error
+      console.log('Course data:', { data, error })
+
+      if (error) {
+        console.error('Error fetching course:', error)
+        setCourse(null)
+        setLoading(false)
+        return
+      }
 
       // Ordenar módulos y lecciones
       const courseData = {
         ...data,
-        modules: data.modules
+        modules: (data.modules || [])
           .sort((a: Module, b: Module) => a.order_index - b.order_index)
           .map((module: Module & { lessons: Lesson[] }) => ({
             ...module,
-            lessons: module.lessons.sort((a: Lesson, b: Lesson) => a.order_index - b.order_index)
+            lessons: (module.lessons || []).sort((a: Lesson, b: Lesson) => a.order_index - b.order_index)
           }))
       }
 
+      console.log('Processed course data:', courseData)
+
       setCourse(courseData)
-      
+
       // Expandir el primer módulo por defecto y seleccionar primera lección
-      if (courseData.modules.length > 0) {
+      if (courseData.modules && courseData.modules.length > 0) {
         setExpandedModules(new Set([courseData.modules[0].id]))
-        if (courseData.modules[0].lessons.length > 0) {
+        if (courseData.modules[0].lessons && courseData.modules[0].lessons.length > 0) {
           setSelectedLesson(courseData.modules[0].lessons[0])
         }
       }
+
+      setLoading(false)
     } catch (error) {
-      console.error('Error fetching course:', error)
-    } finally {
+      console.error('Error in fetchCourseData:', error)
+      setCourse(null)
       setLoading(false)
     }
   }
