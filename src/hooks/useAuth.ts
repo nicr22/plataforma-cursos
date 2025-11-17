@@ -32,7 +32,7 @@ export function useAuth() {
         console.error('[AUTH] Error getting initial session:', error)
       } finally {
         if (mounted) {
-          console.log('[AUTH] Setting loading to false')
+          console.log('[AUTH] Setting loading to false (initial)')
           setLoading(false)
         }
       }
@@ -55,8 +55,13 @@ export function useAuth() {
           } else {
             setProfile(null)
           }
+
+          // CRÍTICO: También setear loading a false aquí
+          console.log('[AUTH] Setting loading to false (state change)')
+          setLoading(false)
         } catch (error) {
           console.error('[AUTH] Error in auth state change:', error)
+          setLoading(false)
         }
       }
     )
