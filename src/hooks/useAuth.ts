@@ -12,6 +12,7 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true
+    let initialLoadComplete = false
 
     const initAuth = async () => {
       try {
@@ -32,9 +33,14 @@ export function useAuth() {
             setProfile(data)
           }
         }
+
+        initialLoadComplete = true
+        if (mounted) {
+          setLoading(false)
+        }
       } catch (error) {
         console.error('Auth error:', error)
-      } finally {
+        initialLoadComplete = true
         if (mounted) {
           setLoading(false)
         }
@@ -63,7 +69,7 @@ export function useAuth() {
           setProfile(null)
         }
 
-        if (mounted) {
+        if (mounted && initialLoadComplete) {
           setLoading(false)
         }
       }
