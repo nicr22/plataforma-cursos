@@ -96,7 +96,7 @@ export default function CoursePage() {
     } finally {
       setLoading(false)
     }
-  }, [user?.id, courseId, router])
+  }, [user?.id, courseId])
 
   // Cargar progreso
   const fetchProgress = useCallback(async () => {
@@ -116,18 +116,22 @@ export default function CoursePage() {
     }
   }, [user?.id])
 
-  // Efecto principal
+  // Redirigir si no hay usuario
   useEffect(() => {
     if (authLoading) return
 
     if (!user) {
       router.push('/')
-      return
     }
+  }, [authLoading, user, router])
+
+  // Cargar datos cuando usuario esté listo
+  useEffect(() => {
+    if (authLoading || !user) return
 
     fetchCourseData()
     fetchProgress()
-  }, [authLoading, user, fetchCourseData, fetchProgress, router])
+  }, [authLoading, user, fetchCourseData, fetchProgress])
 
   // Actualizar progreso
   const updateProgress = useCallback(async (lessonId: string, watchedSeconds: number, isCompleted: boolean) => {
