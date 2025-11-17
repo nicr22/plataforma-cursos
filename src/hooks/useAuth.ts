@@ -13,80 +13,67 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true
 
-    // Obtener sesión inicial
-    const getInitialSession = async () => {
+    const initAuth = async () => {
       try {
-        console.log('[AUTH] Getting initial session...')
-        const { data: { session }, error } = await supabase.auth.getSession()
-
-        console.log('[AUTH] Session result:', { hasSession: !!session, hasUser: !!session?.user, error })
+        const { data: { session } } = await supabase.auth.getSession()
 
         if (!mounted) return
 
         setUser(session?.user ?? null)
 
         if (session?.user) {
-          await fetchProfile(session.user.id)
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+
+          if (mounted && data) {
+            setProfile(data)
+          }
         }
       } catch (error) {
-        console.error('[AUTH] Error getting initial session:', error)
+        console.error('Auth error:', error)
       } finally {
         if (mounted) {
-          console.log('[AUTH] Setting loading to false (initial)')
           setLoading(false)
         }
       }
     }
 
-    getInitialSession()
+    initAuth()
 
-    // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        console.log('[AUTH] Auth state changed:', _event, 'hasUser:', !!session?.user)
-
         if (!mounted) return
 
-        try {
-          setUser(session?.user ?? null)
+        setUser(session?.user ?? null)
 
-          if (session?.user) {
-            await fetchProfile(session.user.id)
-          } else {
-            setProfile(null)
+        if (session?.user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+
+          if (mounted && data) {
+            setProfile(data)
           }
+        } else {
+          setProfile(null)
+        }
 
-          // CRÍTICO: También setear loading a false aquí
-          console.log('[AUTH] Setting loading to false (state change)')
-          setLoading(false)
-        } catch (error) {
-          console.error('[AUTH] Error in auth state change:', error)
+        if (mounted) {
           setLoading(false)
         }
       }
     )
 
     return () => {
-      console.log('[AUTH] Cleanup: unsubscribing')
       mounted = false
       subscription.unsubscribe()
     }
   }, [])
-
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) throw error
-      setProfile(data)
-    } catch (error) {
-      console.error('Error fetching profile:', error)
-    }
-  }
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const { data, error } = await supabase.auth.signUp({

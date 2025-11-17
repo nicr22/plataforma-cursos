@@ -40,61 +40,37 @@ export default function CoursePage() {
 
   const { user, loading: authLoading, signOut } = useAuth()
 
-  // EFECTO PRINCIPAL - TODO EN UNO
   useEffect(() => {
     let isMounted = true
 
     const loadData = async () => {
-      console.log('[COURSE] Starting loadData', { authLoading, user: !!user, courseId })
+      if (authLoading) return
 
-      // Esperar a que auth termine
-      if (authLoading) {
-        console.log('[COURSE] Auth still loading, waiting...')
-        return
-      }
-
-      // Redirigir si no hay usuario
       if (!user) {
-        console.log('[COURSE] No user, redirecting to home')
         router.push('/')
         return
       }
 
-      // Validar datos necesarios
-      if (!user.id || !courseId) {
-        console.log('[COURSE] Missing user.id or courseId')
-        return
-      }
+      if (!user.id || !courseId) return
 
       try {
-        console.log('[COURSE] Setting loading to true')
         setLoading(true)
 
-        // Verificar acceso
-        console.log('[COURSE] Checking access for user:', user.id, 'course:', courseId)
-        const { data: access, error: accessError } = await supabase
+        const { data: access } = await supabase
           .from('user_courses')
           .select('*')
           .eq('user_id', user.id)
           .eq('course_id', courseId)
           .maybeSingle()
 
-        console.log('[COURSE] Access check result:', { access: !!access, accessError })
-
-        if (!isMounted) {
-          console.log('[COURSE] Component unmounted, aborting')
-          return
-        }
+        if (!isMounted) return
 
         if (!access) {
-          console.log('[COURSE] No access to course, redirecting to /courses')
           setLoading(false)
           router.push('/courses')
           return
         }
 
-        // Cargar curso y progreso en paralelo
-        console.log('[COURSE] Loading course and progress data in parallel')
         const [courseResult, progressResult] = await Promise.all([
           supabase
             .from('courses')
@@ -107,28 +83,17 @@ export default function CoursePage() {
             .eq('user_id', user.id)
         ])
 
-        console.log('[COURSE] Data loaded:', {
-          courseLoaded: !!courseResult.data,
-          courseError: !!courseResult.error,
-          progressLoaded: !!progressResult.data
-        })
-
-        if (!isMounted) {
-          console.log('[COURSE] Component unmounted after data load, aborting')
-          return
-        }
+        if (!isMounted) return
 
         const { data: courseData, error: courseError } = courseResult
         const { data: progressData } = progressResult
 
         if (courseError || !courseData) {
-          console.log('[COURSE] Course load error or no data:', courseError)
           setLoading(false)
           router.push('/courses')
           return
         }
 
-        // Procesar datos del curso
         const processedCourse = {
           ...courseData,
           modules: (courseData.modules || [])
@@ -141,7 +106,6 @@ export default function CoursePage() {
 
         setCourse(processedCourse)
 
-        // Configurar primer módulo y lección
         if (processedCourse.modules?.[0]) {
           setExpandedModules(new Set([processedCourse.modules[0].id]))
           if (processedCourse.modules[0].lessons?.[0]) {
@@ -149,7 +113,6 @@ export default function CoursePage() {
           }
         }
 
-        // Procesar progreso
         if (progressData) {
           const progressMap = progressData.reduce((acc, item) => {
             acc[item.lesson_id] = item
@@ -158,12 +121,10 @@ export default function CoursePage() {
           setProgress(progressMap)
         }
 
-        console.log('[COURSE] Successfully loaded course, setting loading to false')
         setLoading(false)
       } catch (error) {
-        console.error('[COURSE] Error in loadData:', error)
+        console.error('Error loading course:', error)
         if (isMounted) {
-          console.log('[COURSE] Setting loading to false due to error')
           setLoading(false)
           router.push('/courses')
         }
@@ -173,7 +134,6 @@ export default function CoursePage() {
     loadData()
 
     return () => {
-      console.log('[COURSE] Cleanup: Component unmounting')
       isMounted = false
     }
   }, [authLoading, user, courseId, router])
