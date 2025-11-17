@@ -40,98 +40,108 @@ export default function CoursePage() {
 
   const { user, loading: authLoading, signOut } = useAuth()
 
-  // Cargar datos del curso
-  const fetchCourseData = useCallback(async () => {
-    if (!user?.id || !courseId) return
+  // EFECTO PRINCIPAL - TODO EN UNO
+  useEffect(() => {
+    let isMounted = true
 
-    try {
-      setLoading(true)
+    const loadData = async () => {
+      // Esperar a que auth termine
+      if (authLoading) return
 
-      // Verificar acceso
-      const { data: access } = await supabase
-        .from('user_courses')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('course_id', courseId)
-        .maybeSingle()
-
-      if (!access) {
-        router.push('/courses')
+      // Redirigir si no hay usuario
+      if (!user) {
+        router.push('/')
         return
       }
 
-      // Cargar curso
-      const { data, error } = await supabase
-        .from('courses')
-        .select(`*, modules (*, lessons (*))`)
-        .eq('id', courseId)
-        .single()
+      // Validar datos necesarios
+      if (!user.id || !courseId) return
 
-      if (error || !data) {
-        router.push('/courses')
-        return
-      }
+      try {
+        setLoading(true)
 
-      const courseData = {
-        ...data,
-        modules: (data.modules || [])
-          .sort((a: Module, b: Module) => a.order_index - b.order_index)
-          .map((module: Module & { lessons: Lesson[] }) => ({
-            ...module,
-            lessons: (module.lessons || []).sort((a: Lesson, b: Lesson) => a.order_index - b.order_index)
-          }))
-      }
+        // Verificar acceso
+        const { data: access } = await supabase
+          .from('user_courses')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('course_id', courseId)
+          .maybeSingle()
 
-      setCourse(courseData)
+        if (!isMounted) return
+        if (!access) {
+          router.push('/courses')
+          return
+        }
 
-      if (courseData.modules?.[0]) {
-        setExpandedModules(new Set([courseData.modules[0].id]))
-        if (courseData.modules[0].lessons?.[0]) {
-          setSelectedLesson(courseData.modules[0].lessons[0])
+        // Cargar curso y progreso en paralelo
+        const [courseResult, progressResult] = await Promise.all([
+          supabase
+            .from('courses')
+            .select(`*, modules (*, lessons (*))`)
+            .eq('id', courseId)
+            .single(),
+          supabase
+            .from('lesson_progress')
+            .select('*')
+            .eq('user_id', user.id)
+        ])
+
+        if (!isMounted) return
+
+        const { data: courseData, error: courseError } = courseResult
+        const { data: progressData } = progressResult
+
+        if (courseError || !courseData) {
+          router.push('/courses')
+          return
+        }
+
+        // Procesar datos del curso
+        const processedCourse = {
+          ...courseData,
+          modules: (courseData.modules || [])
+            .sort((a: Module, b: Module) => a.order_index - b.order_index)
+            .map((module: Module & { lessons: Lesson[] }) => ({
+              ...module,
+              lessons: (module.lessons || []).sort((a: Lesson, b: Lesson) => a.order_index - b.order_index)
+            }))
+        }
+
+        setCourse(processedCourse)
+
+        // Configurar primer módulo y lección
+        if (processedCourse.modules?.[0]) {
+          setExpandedModules(new Set([processedCourse.modules[0].id]))
+          if (processedCourse.modules[0].lessons?.[0]) {
+            setSelectedLesson(processedCourse.modules[0].lessons[0])
+          }
+        }
+
+        // Procesar progreso
+        if (progressData) {
+          const progressMap = progressData.reduce((acc, item) => {
+            acc[item.lesson_id] = item
+            return acc
+          }, {} as Record<string, LessonProgress>)
+          setProgress(progressMap)
+        }
+
+        setLoading(false)
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error loading course:', error)
+          router.push('/courses')
         }
       }
-    } catch (error) {
-      console.error('Error:', error)
-      router.push('/courses')
-    } finally {
-      setLoading(false)
     }
-  }, [user?.id, courseId])
 
-  // Cargar progreso
-  const fetchProgress = useCallback(async () => {
-    if (!user?.id) return
+    loadData()
 
-    const { data } = await supabase
-      .from('lesson_progress')
-      .select('*')
-      .eq('user_id', user.id)
-
-    if (data) {
-      const progressMap = data.reduce((acc, item) => {
-        acc[item.lesson_id] = item
-        return acc
-      }, {} as Record<string, LessonProgress>)
-      setProgress(progressMap)
+    return () => {
+      isMounted = false
     }
-  }, [user?.id])
-
-  // Redirigir si no hay usuario
-  useEffect(() => {
-    if (authLoading) return
-
-    if (!user) {
-      router.push('/')
-    }
-  }, [authLoading, user, router])
-
-  // Cargar datos cuando usuario esté listo
-  useEffect(() => {
-    if (authLoading || !user) return
-
-    fetchCourseData()
-    fetchProgress()
-  }, [authLoading, user, fetchCourseData, fetchProgress])
+  }, [authLoading, user, courseId, router])
 
   // Actualizar progreso
   const updateProgress = useCallback(async (lessonId: string, watchedSeconds: number, isCompleted: boolean) => {
