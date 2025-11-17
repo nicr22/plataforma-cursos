@@ -11,19 +11,30 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+
     // Obtener sesión inicial
     const getInitialSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        console.log('[AUTH] Getting initial session...')
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        console.log('[AUTH] Session result:', { hasSession: !!session, hasUser: !!session?.user, error })
+
+        if (!mounted) return
+
         setUser(session?.user ?? null)
 
         if (session?.user) {
           await fetchProfile(session.user.id)
         }
       } catch (error) {
-        console.error('Error getting initial session:', error)
+        console.error('[AUTH] Error getting initial session:', error)
       } finally {
-        setLoading(false)
+        if (mounted) {
+          console.log('[AUTH] Setting loading to false')
+          setLoading(false)
+        }
       }
     }
 
@@ -32,6 +43,10 @@ export function useAuth() {
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        console.log('[AUTH] Auth state changed:', _event, 'hasUser:', !!session?.user)
+
+        if (!mounted) return
+
         try {
           setUser(session?.user ?? null)
 
@@ -41,14 +56,16 @@ export function useAuth() {
             setProfile(null)
           }
         } catch (error) {
-          console.error('Error in auth state change:', error)
-        } finally {
-          setLoading(false)
+          console.error('[AUTH] Error in auth state change:', error)
         }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      console.log('[AUTH] Cleanup: unsubscribing')
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const fetchProfile = async (userId: string) => {
