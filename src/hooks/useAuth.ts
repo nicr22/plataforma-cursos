@@ -12,16 +12,29 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true
+    let timeoutId: NodeJS.Timeout
 
     const initAuth = async () => {
       try {
+        console.log('[AUTH] Starting initAuth...')
+
+        // Safety timeout - force loading to false after 3 seconds
+        timeoutId = setTimeout(() => {
+          if (mounted) {
+            console.log('[AUTH] TIMEOUT - forcing loading to false after 3s')
+            setLoading(false)
+          }
+        }, 3000)
+
         const { data: { session } } = await supabase.auth.getSession()
+        console.log('[AUTH] Session fetched:', !!session?.user)
 
         if (!mounted) return
 
         setUser(session?.user ?? null)
 
         if (session?.user) {
+          console.log('[AUTH] Fetching profile...')
           const { data } = await supabase
             .from('profiles')
             .select('*')
@@ -30,17 +43,20 @@ export function useAuth() {
 
           if (mounted && data) {
             setProfile(data)
+            console.log('[AUTH] Profile loaded')
           }
         }
 
         if (mounted) {
-          console.log('✓ AUTH READY - setting loading to FALSE')
+          clearTimeout(timeoutId)
+          console.log('[AUTH] ✓ READY - setting loading to FALSE')
           setLoading(false)
         }
       } catch (error) {
-        console.error('Auth error:', error)
+        console.error('[AUTH] Error:', error)
         if (mounted) {
-          console.log('✗ AUTH ERROR - setting loading to FALSE anyway')
+          clearTimeout(timeoutId)
+          console.log('[AUTH] ✗ ERROR - setting loading to FALSE anyway')
           setLoading(false)
         }
       }
@@ -50,6 +66,7 @@ export function useAuth() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        console.log('[AUTH] State changed:', _event)
         if (!mounted) return
 
         setUser(session?.user ?? null)
@@ -72,6 +89,7 @@ export function useAuth() {
 
     return () => {
       mounted = false
+      if (timeoutId) clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [])
