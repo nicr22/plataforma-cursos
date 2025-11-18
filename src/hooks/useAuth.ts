@@ -24,32 +24,42 @@ export function useAuth() {
     // Listen to auth changes - this is the PRIMARY source of auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('[AUTH] Event:', event, 'User:', !!session?.user)
+        console.log('[AUTH] Event:', event, 'User:', !!session?.user, 'Mounted:', mounted)
 
-        if (!mounted) return
+        if (!mounted) {
+          console.log('[AUTH] Component unmounted, skipping')
+          return
+        }
 
+        console.log('[AUTH] Setting user to:', !!session?.user)
         setUser(session?.user ?? null)
 
         if (session?.user) {
+          console.log('[AUTH] Fetching profile for user:', session.user.id.substring(0, 8))
           // Fetch profile
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single()
 
+          console.log('[AUTH] Profile fetch result:', { hasData: !!data, hasError: !!error })
+
           if (mounted && data) {
             setProfile(data)
+            console.log('[AUTH] Profile set')
           }
         } else {
           setProfile(null)
+          console.log('[AUTH] No user, profile set to null')
         }
 
         // Always set loading to false after auth state change
         if (mounted) {
           clearTimeout(fallbackTimeout)
-          console.log('[AUTH] ✓ Auth state processed - loading FALSE')
+          console.log('[AUTH] ✓ About to set loading to FALSE')
           setLoading(false)
+          console.log('[AUTH] ✓ Loading set to FALSE')
         }
       }
     )

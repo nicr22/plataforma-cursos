@@ -44,9 +44,12 @@ export default function CoursePage() {
     let isMounted = true
 
     const loadData = async () => {
-      console.log('→ loadData:', { authLoading, hasUser: !!user })
+      console.log('→ loadData:', { authLoading, hasUser: !!user, courseId })
 
-      if (authLoading) return
+      if (authLoading) {
+        console.log('→ Auth still loading, waiting...')
+        return
+      }
 
       if (!user) {
         router.push('/')
