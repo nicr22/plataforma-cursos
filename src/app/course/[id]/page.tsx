@@ -44,14 +44,25 @@ export default function CoursePage() {
     let isMounted = true
 
     const loadData = async () => {
-      if (authLoading) return
+      console.log('[COURSE DEBUG] loadData called - authLoading:', authLoading, 'user:', !!user)
+
+      if (authLoading) {
+        console.log('[COURSE DEBUG] Auth still loading, waiting...')
+        return
+      }
 
       if (!user) {
+        console.log('[COURSE DEBUG] No user, redirecting home')
         router.push('/')
         return
       }
 
-      if (!user.id || !courseId) return
+      if (!user.id || !courseId) {
+        console.log('[COURSE DEBUG] Missing user.id or courseId')
+        return
+      }
+
+      console.log('[COURSE DEBUG] Starting to load course data...')
 
       try {
         setLoading(true)

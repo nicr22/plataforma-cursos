@@ -16,13 +16,16 @@ export function useAuth() {
 
     const initAuth = async () => {
       try {
+        console.log('[AUTH DEBUG] Getting session...')
         const { data: { session } } = await supabase.auth.getSession()
+        console.log('[AUTH DEBUG] Session result:', !!session?.user)
 
         if (!mounted) return
 
         setUser(session?.user ?? null)
 
         if (session?.user) {
+          console.log('[AUTH DEBUG] Fetching profile...')
           const { data } = await supabase
             .from('profiles')
             .select('*')
@@ -32,9 +35,11 @@ export function useAuth() {
           if (mounted && data) {
             setProfile(data)
           }
+          console.log('[AUTH DEBUG] Profile fetched:', !!data)
         }
 
         initialLoadComplete = true
+        console.log('[AUTH DEBUG] Setting loading to FALSE, initialLoadComplete:', initialLoadComplete)
         if (mounted) {
           setLoading(false)
         }
