@@ -12,66 +12,26 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true
-    let timeoutId: NodeJS.Timeout
 
-    const initAuth = async () => {
-      try {
-        console.log('[AUTH] Starting initAuth...')
-
-        // Safety timeout - force loading to false after 3 seconds
-        timeoutId = setTimeout(() => {
-          if (mounted) {
-            console.log('[AUTH] TIMEOUT - forcing loading to false after 3s')
-            setLoading(false)
-          }
-        }, 3000)
-
-        const { data: { session } } = await supabase.auth.getSession()
-        console.log('[AUTH] Session fetched:', !!session?.user)
-
-        if (!mounted) return
-
-        setUser(session?.user ?? null)
-
-        if (session?.user) {
-          console.log('[AUTH] Fetching profile...')
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-
-          if (mounted && data) {
-            setProfile(data)
-            console.log('[AUTH] Profile loaded')
-          }
-        }
-
-        if (mounted) {
-          clearTimeout(timeoutId)
-          console.log('[AUTH] ✓ READY - setting loading to FALSE')
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('[AUTH] Error:', error)
-        if (mounted) {
-          clearTimeout(timeoutId)
-          console.log('[AUTH] ✗ ERROR - setting loading to FALSE anyway')
-          setLoading(false)
-        }
+    // Set loading to false after 2 seconds as fallback
+    const fallbackTimeout = setTimeout(() => {
+      if (mounted) {
+        console.log('[AUTH] Fallback timeout - setting loading to FALSE')
+        setLoading(false)
       }
-    }
+    }, 2000)
 
-    initAuth()
-
+    // Listen to auth changes - this is the PRIMARY source of auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        console.log('[AUTH] State changed:', _event)
+      async (event, session) => {
+        console.log('[AUTH] Event:', event, 'User:', !!session?.user)
+
         if (!mounted) return
 
         setUser(session?.user ?? null)
 
         if (session?.user) {
+          // Fetch profile
           const { data } = await supabase
             .from('profiles')
             .select('*')
@@ -84,12 +44,51 @@ export function useAuth() {
         } else {
           setProfile(null)
         }
+
+        // Always set loading to false after auth state change
+        if (mounted) {
+          clearTimeout(fallbackTimeout)
+          console.log('[AUTH] ✓ Auth state processed - loading FALSE')
+          setLoading(false)
+        }
       }
     )
 
+    // Try getSession but don't block on it (Chrome issue workaround)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return
+
+      console.log('[AUTH] getSession resolved:', !!session?.user)
+
+      if (session?.user && !user) {
+        setUser(session.user)
+
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (mounted && data) {
+              setProfile(data)
+            }
+          })
+      }
+
+      if (mounted) {
+        clearTimeout(fallbackTimeout)
+        setLoading(false)
+      }
+    }).catch((error) => {
+      console.error('[AUTH] getSession error:', error)
+      if (mounted) {
+        setLoading(false)
+      }
+    })
+
     return () => {
       mounted = false
-      if (timeoutId) clearTimeout(timeoutId)
+      clearTimeout(fallbackTimeout)
       subscription.unsubscribe()
     }
   }, [])
