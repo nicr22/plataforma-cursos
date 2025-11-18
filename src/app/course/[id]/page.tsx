@@ -44,6 +44,8 @@ export default function CoursePage() {
     let isMounted = true
 
     const loadData = async () => {
+      console.log('→ loadData:', { authLoading, hasUser: !!user })
+
       if (authLoading) return
 
       if (!user) {
@@ -136,7 +138,7 @@ export default function CoursePage() {
     return () => {
       isMounted = false
     }
-  }, [authLoading, user, courseId, router])
+  }, [authLoading, user?.id, courseId, router])
 
   // Actualizar progreso
   const updateProgress = useCallback(async (lessonId: string, watchedSeconds: number, isCompleted: boolean) => {

@@ -34,11 +34,13 @@ export function useAuth() {
         }
 
         if (mounted) {
+          console.log('✓ AUTH READY - setting loading to FALSE')
           setLoading(false)
         }
       } catch (error) {
         console.error('Auth error:', error)
         if (mounted) {
+          console.log('✗ AUTH ERROR - setting loading to FALSE anyway')
           setLoading(false)
         }
       }
