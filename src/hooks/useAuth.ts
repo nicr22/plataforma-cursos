@@ -23,43 +23,38 @@ export function useAuth() {
 
     // Listen to auth changes - this is the PRIMARY source of auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('[AUTH] Event:', event, 'User:', !!session?.user, 'Mounted:', mounted)
+      (event, session) => {
+        console.log('[AUTH] Event:', event, 'User:', !!session?.user)
 
-        if (!mounted) {
-          console.log('[AUTH] Component unmounted, skipping')
-          return
-        }
+        if (!mounted) return
 
-        console.log('[AUTH] Setting user to:', !!session?.user)
         setUser(session?.user ?? null)
 
+        // Set loading to false IMMEDIATELY - don't wait for profile
+        if (mounted) {
+          clearTimeout(fallbackTimeout)
+          setLoading(false)
+          console.log('[AUTH] ✓ Loading set to FALSE')
+        }
+
+        // Fetch profile asynchronously (don't block auth loading)
         if (session?.user) {
-          console.log('[AUTH] Fetching profile for user:', session.user.id.substring(0, 8))
-          // Fetch profile
-          const { data, error } = await supabase
+          supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single()
-
-          console.log('[AUTH] Profile fetch result:', { hasData: !!data, hasError: !!error })
-
-          if (mounted && data) {
-            setProfile(data)
-            console.log('[AUTH] Profile set')
-          }
+            .then(({ data }) => {
+              if (mounted && data) {
+                setProfile(data)
+                console.log('[AUTH] Profile loaded')
+              }
+            })
+            .catch((error) => {
+              console.error('[AUTH] Profile fetch error:', error)
+            })
         } else {
           setProfile(null)
-          console.log('[AUTH] No user, profile set to null')
-        }
-
-        // Always set loading to false after auth state change
-        if (mounted) {
-          clearTimeout(fallbackTimeout)
-          console.log('[AUTH] ✓ About to set loading to FALSE')
-          setLoading(false)
-          console.log('[AUTH] ✓ Loading set to FALSE')
         }
       }
     )
